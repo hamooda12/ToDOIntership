@@ -1,6 +1,7 @@
 package org.example.todointership;
 
 
+import jakarta.validation.Valid;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
@@ -31,7 +32,7 @@ public class toDocontroller {
 
     @GetMapping("/tasks")
     public ResponseEntity<List<Task>> getTasks() {
-        tasks.get(0).setDone(true);
+
         return ResponseEntity.ok(tasks);
     }
 
@@ -44,21 +45,27 @@ public class toDocontroller {
     }
 
     @PostMapping("/tasks")
-    public ResponseEntity<Task> createTask(@RequestBody Task task) {
+    public ResponseEntity<Task> createTask(@RequestBody @Valid Task task) {
         tasks.add(task);
         return ResponseEntity.status(HttpStatus.CREATED).body(task);
     }
     @PutMapping("/tasks/{id}")
-    public ResponseEntity<Task> updateTask(@PathVariable long id, @RequestBody Task updatedTask) {
-        if(tasks.stream().noneMatch(task -> task.getId() == id)) {
-            return ResponseEntity.status(HttpStatus.NOT_FOUND).body(null);
-        }
-        if (updatedTask.getId() != id) {
-            return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(null);
-        }
-        tasks.removeIf(task -> task.getId() == id);
-        tasks.add(updatedTask);
-        return ResponseEntity.ok(updatedTask);
+    public ResponseEntity<Task> updateTask(
+            @PathVariable long id,
+            @RequestBody @Valid Task updatedTask) {
+
+        Task task = tasks.stream()
+                .filter(t -> t.getId() == id)
+                .findFirst()
+                .orElseThrow(() ->
+                        new ResponseStatusException(
+                                HttpStatus.NOT_FOUND,
+                                "Task not found"));
+
+        task.setTitle(updatedTask.getTitle());
+        task.setDone(updatedTask.isDone());
+
+        return ResponseEntity.ok(task);
     }
     @DeleteMapping("/tasks/{id}")
     public ResponseEntity<Void> deleteTask(@PathVariable long id) {
