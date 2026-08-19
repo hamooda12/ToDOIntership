@@ -1,15 +1,19 @@
 package org.example.todointership;
 
+
 public class Task {
-    private long id;
+
+    private static long id=0;
     private String title;
     private boolean done;
 
-    Task(long id, String title, boolean done) {
-        this.id = id;
+    Task(String title) {
+id++;
         this.title = title;
-        this.done = done;
+        done = false;
+
     }
+
     public  long getId() {
         return id;
     }

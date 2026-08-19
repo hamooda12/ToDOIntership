@@ -2,9 +2,7 @@ package org.example.todointership;
 
 
 import org.springframework.http.HttpStatus;
-import org.springframework.web.bind.annotation.GetMapping;
-import org.springframework.web.bind.annotation.PathVariable;
-import org.springframework.web.bind.annotation.RestController;
+import org.springframework.web.bind.annotation.*;
 import org.springframework.web.server.ResponseStatusException;
 
 import java.util.ArrayList;
@@ -12,11 +10,15 @@ import java.util.List;
 
 @RestController
 public class toDocontroller {
-    private final List<Task> tasks = new ArrayList<>(List.of(
-            new Task(1, "Learn Spring Boot", false),
-            new Task(2, "Build REST API", false),
-            new Task(3, "Test the API", true)
+
+    List<Task> tasks = new ArrayList<>(List.of(
+            new Task("Learn Spring Boot"),
+            new Task("Build REST API"),
+            new Task("Test the API")
+
     ));
+
+
     @GetMapping()
     public  String hello(){
         return "{ \"name\": \"Task API\", \"version\": \"1.0\", \"endpoints\": [\"/tasks\"] }";
@@ -28,6 +30,7 @@ public class toDocontroller {
 
     @GetMapping("/tasks")
     public List<Task> getTasks() {
+        tasks.get(0).setDone(true);
         return tasks;
     }
 
@@ -37,6 +40,12 @@ public class toDocontroller {
                 .filter(task -> task.getId() == id)
                 .findFirst()
                 .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND, "Task not found"));
+    }
+
+    @PostMapping("/tasks")
+    public Task createTask(@RequestBody Task task) {
+        tasks.add(task);
+        return task;
     }
 
 }
