@@ -2,6 +2,7 @@ package org.example.todointership;
 
 
 import org.springframework.http.HttpStatus;
+import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 import org.springframework.web.server.ResponseStatusException;
 
@@ -31,21 +32,21 @@ public class toDocontroller {
     @GetMapping("/tasks")
     public List<Task> getTasks() {
         tasks.get(0).setDone(true);
-        return tasks;
+        return ResponseEntity.ok(tasks).getBody();
     }
 
     @GetMapping("/tasks/{id}")
     public Task getTaskById(@PathVariable long id) {
-        return tasks.stream()
+        return ResponseEntity.ok(tasks.stream()
                 .filter(task -> task.getId() == id)
                 .findFirst()
-                .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND, "Task not found"));
+                .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND, "Task not found"))).getBody();
     }
 
     @PostMapping("/tasks")
     public Task createTask(@RequestBody Task task) {
         tasks.add(task);
-        return task;
+        return ResponseEntity.status(HttpStatus.CREATED).body(task).getBody();
     }
 
 
