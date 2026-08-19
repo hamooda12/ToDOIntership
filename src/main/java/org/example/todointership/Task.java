@@ -1,9 +1,17 @@
 package org.example.todointership;
 
 
+import jakarta.validation.Valid;
+import jakarta.validation.constraints.Max;
+import jakarta.validation.constraints.NotBlank;
+import jakarta.validation.constraints.NotNull;
+
 public class Task {
 
-    private static long id=0;
+    private  long id=0;
+    @NotBlank(message = "Title cannot be blank")
+    @NotNull(message = "Title cannot be null")
+    @Max(value = 100, message = "Title cannot be longer than 100 characters")
     private String title;
     private boolean done;
 
