@@ -92,7 +92,7 @@ http://localhost:8080/swagger-ui/index.html
 
 ### Swagger Screenshot
 
-![Swagger UI](docs/swagger-ui.png)
+![Swagger UI](Screenshot From 2026-08-19 17-55-56.png)
 
 Using Swagger UI, you can perform the complete CRUD cycle:
 
