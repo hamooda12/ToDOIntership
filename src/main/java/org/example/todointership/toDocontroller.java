@@ -30,24 +30,43 @@ public class toDocontroller {
         return "{ \"status\": \"ok\" }";  }
 
     @GetMapping("/tasks")
-    public List<Task> getTasks() {
+    public ResponseEntity<List<Task>> getTasks() {
         tasks.get(0).setDone(true);
-        return ResponseEntity.ok(tasks).getBody();
+        return ResponseEntity.ok(tasks);
     }
 
     @GetMapping("/tasks/{id}")
-    public Task getTaskById(@PathVariable long id) {
+    public ResponseEntity<Task> getTaskById(@PathVariable long id) {
         return ResponseEntity.ok(tasks.stream()
                 .filter(task -> task.getId() == id)
                 .findFirst()
-                .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND, "Task not found"))).getBody();
+                .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND, "Task not found")));
     }
 
     @PostMapping("/tasks")
-    public Task createTask(@RequestBody Task task) {
+    public ResponseEntity<Task> createTask(@RequestBody Task task) {
         tasks.add(task);
-        return ResponseEntity.status(HttpStatus.CREATED).body(task).getBody();
+        return ResponseEntity.status(HttpStatus.CREATED).body(task);
     }
+    @PutMapping("/tasks/{id}")
+    public ResponseEntity<Task> updateTask(@PathVariable long id, @RequestBody Task updatedTask) {
+        if(tasks.stream().noneMatch(task -> task.getId() == id)) {
+            return ResponseEntity.status(HttpStatus.NOT_FOUND).body(null);
+        }
+        if (updatedTask.getId() != id) {
+            return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(null);
+        }
+        tasks.removeIf(task -> task.getId() == id);
+        tasks.add(updatedTask);
+        return ResponseEntity.ok(updatedTask);
+    }
+    @DeleteMapping("/tasks/{id}")
+    public ResponseEntity<Void> deleteTask(@PathVariable long id) {
+        if(tasks.stream().noneMatch(task -> task.getId() == id)) {
+            return ResponseEntity.status(HttpStatus.NOT_FOUND).build(); }
+
+    tasks.removeIf(task -> task.getId() == id);
+    return ResponseEntity.noContent().build(); }
 
 
 }
