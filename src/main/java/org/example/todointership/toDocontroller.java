@@ -30,7 +30,13 @@ public class toDocontroller {
     public String health() {
         return "{ \"status\": \"ok\" }";  }
 
-    @GetMapping("/tasks")
+    @GetMapping("/tasks?done={done}")
+    public ResponseEntity<List<Task>> getTasksByDone(@PathVariable boolean done) {
+        List<Task> filteredTasks = tasks.stream()
+                .filter(task -> task.isDone() == done)
+                .toList();
+        return ResponseEntity.ok(filteredTasks);
+    }
     public ResponseEntity<List<Task>> getTasks() {
 
         return ResponseEntity.ok(tasks);
