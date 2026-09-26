@@ -48,15 +48,11 @@ public class TaskRepository {
     }
 
     public Task create(String title) {
-        jdbcTemplate.update(
-                "INSERT INTO tasks (title, done) VALUES (?, ?)",
+        Long id = jdbcTemplate.queryForObject(
+                "INSERT INTO tasks (title, done) VALUES (?, ?) RETURNING id",
+                Long.class,
                 title,
                 0
-        );
-
-        Long id = jdbcTemplate.queryForObject(
-                "SELECT last_insert_rowid()",
-                Long.class
         );
 
         return new Task(id, title, false);
