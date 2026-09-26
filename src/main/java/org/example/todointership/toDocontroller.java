@@ -1,85 +1,78 @@
 package org.example.todointership;
 
-
 import jakarta.validation.Valid;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
-import org.springframework.web.server.ResponseStatusException;
 
-import java.util.ArrayList;
 import java.util.List;
 
 @RestController
 public class toDocontroller {
 
-    List<Task> tasks = new ArrayList<>(List.of(
-            new Task("Learn Spring Boot"),
-            new Task("Build REST API"),
-            new Task("Test the API")
+    private final TaskRepository taskRepository;
 
-    ));
+    public toDocontroller(TaskRepository taskRepository) {
+        this.taskRepository = taskRepository;
+    }
 
-
-    @GetMapping()
-    public  String hello(){
+    @GetMapping
+    public String hello() {
         return "{ \"name\": \"Task API\", \"version\": \"1.0\", \"endpoints\": [\"/tasks\"] }";
     }
 
     @GetMapping("/health")
     public String health() {
-        return "{ \"status\": \"ok\" }";  }
-
-    @GetMapping("/tasks?done={done}")
-    public ResponseEntity<List<Task>> getTasksByDone(@PathVariable boolean done) {
-        List<Task> filteredTasks = tasks.stream()
-                .filter(task -> task.isDone() == done)
-                .toList();
-        return ResponseEntity.ok(filteredTasks);
+        return "{ \"status\": \"ok\" }";
     }
-    public ResponseEntity<List<Task>> getTasks() {
 
-        return ResponseEntity.ok(tasks);
+    @GetMapping("/tasks")
+    public ResponseEntity<List<Task>> getTasks(
+            @RequestParam(required = false) Boolean done) {
+
+        if (done == null) {
+            return ResponseEntity.ok(taskRepository.findAll());
+        }
+
+        return ResponseEntity.ok(taskRepository.findByDone(done));
     }
 
     @GetMapping("/tasks/{id}")
     public ResponseEntity<Task> getTaskById(@PathVariable long id) {
-        return ResponseEntity.ok(tasks.stream()
-                .filter(task -> task.getId() == id)
-                .findFirst()
-                .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND, "Task not found")));
+        return taskRepository.findById(id)
+                .map(ResponseEntity::ok)
+                .orElseThrow(() -> new TaskNotFoundException(id));
     }
 
     @PostMapping("/tasks")
     public ResponseEntity<Task> createTask(@RequestBody @Valid Task task) {
-        tasks.add(task);
-        return ResponseEntity.status(HttpStatus.CREATED).body(task);
+        Task createdTask = taskRepository.create(task.getTitle());
+
+        return ResponseEntity
+                .status(HttpStatus.CREATED)
+                .body(createdTask);
     }
+
     @PutMapping("/tasks/{id}")
     public ResponseEntity<Task> updateTask(
             @PathVariable long id,
             @RequestBody @Valid Task updatedTask) {
 
-        Task task = tasks.stream()
-                .filter(t -> t.getId() == id)
-                .findFirst()
-                .orElseThrow(() ->
-                        new ResponseStatusException(
-                                HttpStatus.NOT_FOUND,
-                                "Task not found"));
-
-        task.setTitle(updatedTask.getTitle());
-        task.setDone(updatedTask.isDone());
+        Task task = taskRepository.update(
+                id,
+                updatedTask.getTitle(),
+                updatedTask.isDone()
+        ).orElseThrow(() -> new TaskNotFoundException(id));
 
         return ResponseEntity.ok(task);
     }
+
     @DeleteMapping("/tasks/{id}")
     public ResponseEntity<Void> deleteTask(@PathVariable long id) {
-        if(tasks.stream().noneMatch(task -> task.getId() == id)) {
-            return ResponseEntity.status(HttpStatus.NOT_FOUND).build(); }
+        if (!taskRepository.delete(id)) {
+            throw new TaskNotFoundException(id);
+        }
 
-    tasks.removeIf(task -> task.getId() == id);
-    return ResponseEntity.noContent().build(); }
-
-
+        return ResponseEntity.noContent().build();
+    }
 }
