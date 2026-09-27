@@ -2,25 +2,39 @@
 
 A Spring Boot REST API for managing a to-do list.
 
-This project started as the **FlyRank Backend Internship – Week 2 Assignment** and originally stored tasks in memory. In **Week 3 / Assignment A2**, the storage layer was replaced with a real SQLite database while keeping the CRUD API behavior the same.
+This project is part of the **FlyRank Backend Internship** and provides a CRUD API backed by PostgreSQL. The application can be run locally with Spring Boot or as a complete containerized stack using Docker Compose.
 
-## Week 3 Goal
+## Architecture
 
-The architecture is now:
+### Local development
 
-```
+```text
 Client
    ↓
 Spring Boot REST API
    ↓
 TaskRepository
    ↓
-SQLite
-   ↓
-tasks.db
+PostgreSQL
 ```
 
-The API still exposes the same CRUD endpoints, but task data now survives application restarts.
+### Docker Compose
+
+```text
+                    Docker Compose
+                         │
+              ┌──────────┴──────────┐
+              │                     │
+           app                     db
+      Spring Boot API           PostgreSQL
+              │                     │
+              └──── db:5432 ────────┘
+                         │
+                     pgdata
+                   named volume
+```
+
+The API container connects to PostgreSQL using the Compose service name `db`, not `localhost`.
 
 ## Technologies
 
@@ -28,31 +42,28 @@ The API still exposes the same CRUD endpoints, but task data now survives applic
 - Spring Boot 4.1.0
 - Spring Web
 - Spring JDBC
-- SQLite
+- PostgreSQL
 - Jakarta Validation
 - Swagger / OpenAPI
 - Maven
+- Docker
+- Docker Compose
 - Git / GitHub
 
 ## Database
 
-SQLite was chosen because it is a lightweight database stored in a single file and requires no separate database server.
+The application uses PostgreSQL.
 
-The application creates:
+The database is configured with:
 
 ```text
-tasks.db
-└── tasks
-    ├── id
-    ├── title
-    └── done
+Database: tasks
+Username: postgres
 ```
 
-The `tasks.db` file is created automatically when the application starts.
+On the first run, the application creates the `tasks` table if it does not exist.
 
-The `tasks` table is also created automatically if it does not exist.
-
-On the first run, three example tasks are inserted:
+If the table is empty, three example tasks are inserted:
 
 1. Learn Spring Boot
 2. Build REST API
@@ -60,7 +71,27 @@ On the first run, three example tasks are inserted:
 
 The seed data is inserted only when the table is empty, so restarting the application does not create duplicate tasks.
 
-The local database file is intentionally ignored by Git so every clone can create its own fresh database.
+## Environment Variables
+
+Local configuration is loaded from a `.env` file.
+
+Create a local `.env` file based on `.env.example`:
+
+```env
+DATABASE_URL=jdbc:postgresql://localhost:5432/tasks
+DATABASE_USERNAME=postgres
+DATABASE_PASSWORD=dev
+```
+
+The `.env` file is ignored by Git and must not be committed.
+
+For Docker Compose, the application container uses the PostgreSQL service name:
+
+```text
+jdbc:postgresql://db:5432/tasks
+```
+
+The committed `.env.example` contains the variables required for local development without exposing local environment files.
 
 ## API Endpoints
 
@@ -107,7 +138,7 @@ with a JSON error message.
 }
 ```
 
-The database controls the task ID. A newly created task always starts with `done = false`.
+The database controls the task ID. A newly created task starts with `done = false` unless explicitly provided otherwise.
 
 ## SQL Storage
 
@@ -133,17 +164,75 @@ DELETE FROM tasks
 WHERE id = ?;
 ```
 
-## Running the Project
+## Running with Docker Compose
+
+### Requirements
+
+- Docker Desktop
+- Docker Compose
+
+The complete application stack can be started with one command:
+
+```bash
+docker compose up
+```
+
+To rebuild the Spring Boot image before starting:
+
+```bash
+docker compose up --build
+```
+
+The stack contains:
+
+- `app` — Spring Boot REST API
+- `db` — PostgreSQL database
+- `pgdata` — named PostgreSQL volume
+
+The API will be available at:
+
+```text
+http://localhost:8080
+```
+
+Check the API:
+
+```bash
+curl http://localhost:8080/tasks
+```
+
+On PowerShell:
+
+```powershell
+Invoke-RestMethod http://localhost:8080/tasks
+```
+
+To stop the stack without deleting database data:
+
+```bash
+docker compose down
+```
+
+> Do not use `docker compose down -v` when you want to preserve the PostgreSQL data. The `-v` option removes the named volume.
+
+## Running Locally
 
 ### Requirements
 
 - Java 21
 - Maven
+- PostgreSQL
 
-Run:
+Configure the local PostgreSQL connection in `.env`, then run:
 
 ```bash
 ./mvnw spring-boot:run
+```
+
+On Windows:
+
+```powershell
+./mvnw.cmd spring-boot:run
 ```
 
 The API will be available at:
@@ -152,18 +241,12 @@ The API will be available at:
 http://localhost:8080
 ```
 
-On Windows, you can also use:
-
-```powershell
-./mvnw.cmd spring-boot:run
-```
-
 ## Swagger UI
 
 Open:
 
 ```text
-http://localhost:8080/swagger-ui/index.html
+http://localhost:8080/swagger-ui.html
 ```
 
 Swagger can be used to test the complete CRUD cycle.
@@ -178,7 +261,7 @@ curl -i -X POST http://localhost:8080/tasks \
   -d '{"title":"Buy milk"}'
 ```
 
-Example:
+Example response:
 
 ```json
 {
@@ -228,29 +311,77 @@ Successful deletion returns:
 
 ## Persistence Check
 
-To prove that SQLite is working:
+The PostgreSQL database uses a Docker named volume called `pgdata`.
 
-1. Start the application.
-2. Run `GET /tasks`.
-3. Create a new task.
-4. Stop the application.
-5. Start it again.
+To verify that database data survives container recreation:
+
+1. Start the stack:
+   ```bash
+   docker compose up
+   ```
+2. Create a new task.
+3. Verify the task exists with `GET /tasks`.
+4. Stop the stack:
+   ```bash
+   docker compose down
+   ```
+5. Start the stack again:
+   ```bash
+   docker compose up
+   ```
 6. Run `GET /tasks` again.
-7. Confirm the created task is still present.
+7. Confirm that the previously created task is still present.
 
-The same data can also be inspected by opening `tasks.db` with **DB Browser for SQLite**.
+Do **not** use `docker compose down -v` for this test because removing the volume also removes the persisted database data.
 
-## GitHub / Assignment Stages
+## Docker Files
 
-- Stage 0 — Create and initialize the SQLite database.
-- Stage 1 — Read tasks from SQLite.
-- Stage 2 — Insert new tasks into SQLite.
-- Stage 3 — Update and delete tasks using SQL.
-- Stage 4 — Explore the database manually with DB Browser for SQLite.
-- Stage 5 — Document and publish the database-backed API.
+### Dockerfile
 
-## Assignment Context
+The project uses a multi-stage Docker build:
 
-This is the Spring Boot adaptation of the FlyRank Week 3 Assignment A2, **Connecting your CRUD to the database**.
+1. Maven/JDK image builds the Spring Boot application.
+2. A smaller Eclipse Temurin JRE image runs the generated JAR.
 
-The assignment's central requirement is to replace in-memory storage with persistent SQLite storage while keeping the API behavior the same.
+### Docker Compose
+
+The Compose configuration defines:
+
+- Spring Boot API service: `app`
+- PostgreSQL service: `db`
+- API-to-database connection through `db:5432`
+- PostgreSQL named volume: `pgdata`
+- API port: `8080`
+
+## Git and Secrets
+
+The following local files/data are intentionally excluded from Git:
+
+- `.env`
+- local database files
+- build output
+
+Use `.env.example` as the template for required environment variables.
+
+No local `.env` file should be committed to the repository.
+
+## Assignment Progress
+
+This implementation covers the containerized PostgreSQL stack:
+
+- PostgreSQL runs in Docker.
+- PostgreSQL data is stored in a named Docker volume.
+- Spring Boot connects to PostgreSQL using environment variables.
+- The API reads and writes tasks using PostgreSQL.
+- The Spring Boot application is packaged in a Docker image.
+- Docker Compose starts the API and PostgreSQL together.
+- The API connects to PostgreSQL using the Compose service name `db`.
+- Database persistence has been verified across `docker compose down` and `docker compose up`.
+
+## Project Repository
+
+GitHub:
+
+```text
+https://github.com/hamooda12/ToDOIntership
+```
