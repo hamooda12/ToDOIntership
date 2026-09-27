@@ -365,6 +365,43 @@ Use `.env.example` as the template for required environment variables.
 
 No local `.env` file should be committed to the repository.
 
+
+## Authentication
+
+Authentication is handled by Supabase Auth.
+
+### Authentication endpoints
+
+| Method | Endpoint | Authentication | Description |
+|---|---|---|---|
+| POST | /auth/signup | No | Create a Supabase user |
+| POST | /auth/login | No | Authenticate and return JWT tokens |
+| POST | /auth/logout | Yes | Terminate the authenticated session |
+| GET | /protected/profile | Yes | Return the authenticated user's profile |
+| GET | /protected/dashboard | Yes | Example protected dashboard |
+| GET | /public/info | No | Public information |
+
+Protected requests must include:
+
+Authorization: Bearer <access_token>
+
+### Authentication status codes
+
+- 201 Created — successful signup
+- 200 OK — successful login or protected read
+- 204 No Content — successful logout
+- 400 Bad Request — invalid or missing input
+- 401 Unauthorized — missing, invalid, expired, or incorrect authentication
+- 502 Bad Gateway — authentication provider error
+
+### Swagger
+
+Open http://localhost:8080/swagger-ui.html
+
+Use Authorize and enter the JWT returned by /auth/login. Swagger sends the token to endpoints marked with the bearerAuth security requirement.
+
+/auth/signup and /auth/login remain public. /auth/logout and /protected/* require Bearer authentication.
+
 ## Assignment Progress
 
 This implementation covers the containerized PostgreSQL stack:
