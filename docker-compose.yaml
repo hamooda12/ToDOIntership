@@ -1,0 +1,28 @@
+services:
+  app:
+    image: 'docker-spring-boot-postgres:latest'
+    build:
+      context: .
+    container_name: app
+    depends_on:
+        - db
+    environment:
+
+      - DATABASE_URL=jdbc:postgresql://db:5432/tasks
+      - DATABASE_USERNAME=postgres
+      - DATABASE_PASSWORD=dev
+
+
+    ports:
+        - "8080:8080"
+  db:
+    image: postgres
+    container_name: db
+    environment:
+        - POSTGRES_USER=postgres
+        - POSTGRES_PASSWORD=dev
+        - POSTGRES_DB=tasks
+    volumes:
+      - pgdata:/var/lib/postgresql
+volumes:
+  pgdata:
