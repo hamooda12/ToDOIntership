@@ -34,7 +34,7 @@ public class TaskRepository {
         return jdbcTemplate.query(
                 "SELECT id, title, done FROM tasks WHERE done = ? ORDER BY id",
                 this::mapRow,
-                done ? 1 : 0
+                done
         );
     }
 
@@ -48,21 +48,25 @@ public class TaskRepository {
     }
 
     public Task create(String title) {
-        Long id = jdbcTemplate.queryForObject(
-                "INSERT INTO tasks (title, done) VALUES (?, ?) RETURNING id",
-                Long.class,
+        Task task = jdbcTemplate.queryForObject(
+                "INSERT INTO tasks (title, done) VALUES (?, ?) RETURNING id, title, done",
+                this::mapRow,
                 title,
-                0
+                false
         );
 
-        return new Task(id, title, false);
+        if (task == null) {
+            throw new IllegalStateException("Task was not created");
+        }
+
+        return task;
     }
 
     public Optional<Task> update(long id, String title, boolean done) {
         int updated = jdbcTemplate.update(
                 "UPDATE tasks SET title = ?, done = ? WHERE id = ?",
                 title,
-                done ? 1 : 0,
+                done,
                 id
         );
 
@@ -92,7 +96,7 @@ public class TaskRepository {
         jdbcTemplate.update(
                 "INSERT INTO tasks (title, done) VALUES (?, ?)",
                 title,
-                0
+                false
         );
     }
 }
