@@ -49,4 +49,12 @@ public class SupabaseAuthService {
                 .retrieve()
                 .body(Map.class);
     }
+    public void logout(String accessToken) {
+
+        restClient.post()
+                .uri("/auth/v1/logout")
+                .header("Authorization", "Bearer " + accessToken)
+                .retrieve()
+                .toBodilessEntity();
+    }
 }

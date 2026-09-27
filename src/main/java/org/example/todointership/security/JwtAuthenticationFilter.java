@@ -30,7 +30,7 @@ public class JwtAuthenticationFilter extends OncePerRequestFilter {
         String path = request.getRequestURI();
 
         // Only protect /protected/**
-        if (!path.startsWith("/protected/")) {
+        if (!path.startsWith("/protected/") && !path.equals("/auth/logout")) {
             filterChain.doFilter(request, response);
             return;
         }
@@ -48,6 +48,7 @@ public class JwtAuthenticationFilter extends OncePerRequestFilter {
             Map user = tokenService.verifyToken(token);
 
             request.setAttribute("user", user);
+            request.setAttribute("accessToken", token);
             filterChain.doFilter(request, response);
 
         } catch (Exception e) {
