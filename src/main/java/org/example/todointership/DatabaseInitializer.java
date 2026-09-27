@@ -19,9 +19,9 @@ public class DatabaseInitializer {
     public void initialize() {
         jdbcTemplate.execute("""
                 CREATE TABLE IF NOT EXISTS tasks (
-                    id INTEGER PRIMARY KEY AUTOINCREMENT,
+                    id BIGSERIAL PRIMARY KEY,
                     title TEXT NOT NULL,
-                    done INTEGER NOT NULL DEFAULT 0
+                    done BOOLEAN NOT NULL DEFAULT FALSE
                 )
                 """);
 
